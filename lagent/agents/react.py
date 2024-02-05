@@ -82,8 +82,8 @@ class ReActProtocol:
                      role='RESPONSE', begin='Response:', end='\n'),
                  finish: dict = dict(
                      role='FINISH', begin='Final Answer:', end='\n'),
-                 call_protocol: str = CALL_PROTOCOL_EN,
-                 force_stop: str = FORCE_STOP_PROMPT_EN) -> None:
+                 call_protocol: str = CALL_PROTOCOL_CN,
+                 force_stop: str = FORCE_STOP_PROMPT_CN) -> None:
         self.call_protocol = call_protocol
         self.force_stop = force_stop
         self.thought = thought
@@ -232,10 +232,15 @@ class ReAct(BaseAgent):
                 force_stop=(turn == self.max_turn - 1))
             response = self._llm.chat(prompt, **kwargs)
             inner_history.append(dict(role='assistant', content=response))
+            print(f"\n\nprompt: {prompt}\n")
+            print(f"response: {response}")
             thought, action, action_input = self._protocol.parse(
                 response, self._action_executor)
+            print(f"thought:{thought} \n\n action:{action}\n\n action_input:{action_input}")
             action_return: ActionReturn = self._action_executor(
                 action, action_input)
+            print(f"action_return: {action_return}")
+
             action_return.thought = thought
             agent_return.actions.append(action_return)
             if action_return.type == self._action_executor.finish_action.name:
