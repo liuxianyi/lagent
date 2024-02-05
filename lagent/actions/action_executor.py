@@ -72,7 +72,7 @@ class ActionExecutor:
         if name in self.actions:
             del self.actions[name]
 
-    def __call__(self, name: str, command: str) -> ActionReturn:
+    def __call__(self, name: str, command: Union[dict, str]) -> ActionReturn:
         action_name, api_name = (
             name.split('.') if '.' in name else (name, 'run'))
         if not self.is_valid(action_name):
