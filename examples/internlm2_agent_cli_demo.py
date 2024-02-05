@@ -1,18 +1,19 @@
 from argparse import ArgumentParser
 
-from lagent.actions import ActionExecutor, ArxivSearch, IPythonInterpreter
+from lagent.actions import ActionExecutor, IPythonInterpreter, Image2VideoInterpreter, TableQAInterpreter
 from lagent.agents.internlm2_agent import INTERPRETER_CN, META_CN, PLUGIN_CN, Internlm2Agent, Internlm2Protocol
 from lagent.llms import HFTransformer
 from lagent.llms.meta_template import INTERNLM2_META as META
 from lagent.schema import AgentStatusCode
 
+import torch
 
 def parse_args():
     parser = ArgumentParser(description='chatbot')
     parser.add_argument(
         '--path',
         type=str,
-        default='internlm/internlm2-chat-20b',
+        default='/share/model_repos/internlm2-chat-7b',
         help='The path to the model')
     args = parser.parse_args()
     return args
@@ -29,12 +30,13 @@ def main():
         temperature=0.1,
         repetition_penalty=1.0,
         stop_words=['<|im_end|>'])
-    plugin_executor = ActionExecutor(actions=[ArxivSearch()])  # noqa: F841
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    plugin_executor = ActionExecutor(actions=[Image2VideoInterpreter(device), TableQAInterpreter(device)])  # noqa: F841
     interpreter_executor = ActionExecutor(actions=[IPythonInterpreter()])
 
     chatbot = Internlm2Agent(
         llm=model,
-        plugin_executor=None,
+        plugin_executor=plugin_executor,
         interpreter_executor=interpreter_executor,
         protocol=Internlm2Protocol(
             meta_prompt=META_CN,
@@ -69,7 +71,7 @@ def main():
         print('\nInternLm2：', end='')
         current_length = 0
         last_status = None
-        for agent_return in chatbot.stream_chat(history, max_new_tokens=512):
+        for agent_return in chatbot.stream_chat(history, max_new_tokens=2048):
             status = agent_return.state
             if status not in [
                     AgentStatusCode.STREAM_ING, AgentStatusCode.CODING,
@@ -96,3 +98,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+# 请使用表格分析工具，表格路径为/root/code/table.csv。问题：表格中最大的年龄是多少？
+# 请使用表格分析工具，表格路径为/root/code/table.csv。问题：表格中平均年龄是多少？

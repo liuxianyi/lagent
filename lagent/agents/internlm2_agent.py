@@ -24,7 +24,8 @@ INTERPRETER_CN = ('你现在已经能够在一个有状态的 Jupyter 笔记本�
 
 PLUGIN_CN = ('你可以使用如下工具：'
              '\n{prompt}\n'
-             '如果你已经获得足够信息，请直接给出答案. 避免不必要的工具调用! '
+             '如果这些工具能够解决当前问题，优先使用这些工具！'
+             '如果你已经获得足够信息，请直接给出答案. 避免不必要的工具调用!'
              '同时注意你可以使用的工具，不要随意捏造！')
 
 
@@ -216,11 +217,14 @@ class Internlm2Agent(BaseAgent):
                 interpreter_executor=self._interpreter_executor,
             )
             response = self._llm.chat(prompt, **kwargs)
+            print(f"\n\nprompt: {prompt}\n")
+            print(f"response: {response}")
             name, language, action = self._protocol.parse(
                 message=response,
                 plugin_executor=self._action_executor,
                 interpreter_executor=self._interpreter_executor,
             )
+            print(f"name:{name} \n\n language:{language}\n\n action:{action}")
             if name:
                 if name == 'plugin':
                     if self._action_executor:
@@ -246,6 +250,7 @@ class Internlm2Agent(BaseAgent):
                     continue
                 action_return: ActionReturn = executor(action['name'],
                                                        action['parameters'])
+                print(f"action_return: {action_return}")
                 action_return.thought = language
                 agent_return.actions.append(action_return)
             inner_history.append(dict(role='language', content=language))
@@ -270,6 +275,7 @@ class Internlm2Agent(BaseAgent):
         offset = len(inner_history)
         agent_return = AgentReturn()
         last_agent_state = AgentStatusCode.SESSION_READY
+
         for _ in range(self.max_turn):
             # list of dict
             prompt = self._protocol.format(
@@ -278,6 +284,7 @@ class Internlm2Agent(BaseAgent):
                 interpreter_executor=self._interpreter_executor,
             )
             response = ''
+            print(f"\n prompt: {prompt}")
             for model_state, res, _ in self._llm.stream_chat(prompt, **kwargs):
                 model_state: ModelStatusCode
                 response = res
@@ -332,7 +339,10 @@ class Internlm2Agent(BaseAgent):
                         agent_return.response = language
                     last_agent_state = agent_state
                     yield deepcopy(agent_return)
+            print(f"\n response: {response}\n\n name: {name} \n\n")
             if name:
+                print(f"\n\n action: {action} \n\n language:{language}")
+                # import pdb; pdb.set_trace()
                 action_return: ActionReturn = executor(action['name'],
                                                        action['parameters'])
                 action_return.thought = language
@@ -356,6 +366,8 @@ class Internlm2Agent(BaseAgent):
                     self._protocol.format_response(action_return, name=name))
                 agent_state += 1
                 agent_return.state = agent_state
+                print(f"\n inner_history: {inner_history}")
+                print(f"\n\n action_return: {action_return} \n")
                 yield agent_return
         agent_return.inner_steps = deepcopy(inner_history[offset:])
         agent_return.state = AgentStatusCode.END
