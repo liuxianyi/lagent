@@ -12,13 +12,16 @@ from .ipython_interpreter import IPythonInterpreter
 from .parser import BaseParser, JsonParser, TupleParser
 from .ppt import PPT
 from .python_interpreter import PythonInterpreter
+from .image2video_interpreter import Image2VideoInterpreter
+from .tableQA_interpreter import TableQAInterpreter
 
 __all__ = [
     'BaseAction', 'ActionExecutor', 'InvalidAction', 'FinishAction',
     'NoAction', 'BINGMap', 'ArxivSearch', 'FinishAction', 'GoogleSearch',
     'GoogleScholar', 'IPythonInterpreter', 'IPythonInteractive',
     'PythonInterpreter', 'PPT', 'BaseParser', 'JsonParser', 'TupleParser',
-    'tool_api', 'list_tools', 'get_tool_cls', 'get_tool'
+    'tool_api', 'list_tools', 'get_tool_cls', 'get_tool', 'Image2VideoInterpreter',
+    'TableQAInterpreter'
 ]
 
 
