@@ -15,6 +15,9 @@ from class_registry import AutoRegister, ClassRegistry
 from griffe import Docstring
 from griffe.enumerations import DocstringSectionKind
 
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
+
 from ..schema import ActionReturn, ActionStatusCode
 from .parser import BaseParser, JsonParser, ParseError
 
@@ -250,6 +253,22 @@ class ToolMeta(ABCMeta):
         return super().__new__(mcs, name, base, attrs)
 
 
+class BasePluginRuntime():
+    GLOBAL_DICT = {}
+    LOCAL_DICT = None
+    HEADERS = []
+
+    def __init__(self, device):
+        # translation
+        self.tsl_tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-zh-en")
+        self.tsl_model = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-zh-en")
+        self.tsl_model.to(device)
+        self.tsl_model.eval()
+
+    def run():
+        pass
+
+
 class BaseAction(metaclass=AutoRegister(TOOL_REGISTRY, ToolMeta)):
     """Base class for all actions.
 
@@ -328,6 +347,7 @@ class BaseAction(metaclass=AutoRegister(TOOL_REGISTRY, ToolMeta)):
         self._enable = enable
 
     def __call__(self, inputs: str, name='run') -> ActionReturn:
+        # run 表示执行run函数
         fallback_args = {'inputs': inputs, 'name': name}
         if not hasattr(self, name):
             return ActionReturn(
